@@ -50,12 +50,14 @@ def recv_control():
         line = raw_input()
         if(line[:4] == 'path'):
             sending = line + '\n'
+            s.sendto(sending.encode('utf-8'), ('localhost', UDP_CTRL_PORT))
             count = int(line.split(' ')[1])
             while count != 0:
-                sending += raw_input() + '\n'
+                sending = raw_input() + '\n'
+                s.sendto(sending.encode('utf-8'), ('localhost', UDP_CTRL_PORT))
                 count -= 1
-            line = sending
-        s.sendto(line.encode('utf-8'), ('localhost', UDP_CTRL_PORT))
+        elif line.strip() != '':
+            s.sendto(line.encode('utf-8'), ('localhost', UDP_CTRL_PORT))
     sys.stderr.write('EOF encountered.')
 
 # open the pipe to communicate with executive

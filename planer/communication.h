@@ -34,6 +34,12 @@ class Communitcation
 
     void cread(char receive[], int length) const;
 
+    int getWpipe()
+    {
+      return getp[0];
+    };
+
+
   private:
     pid_t pid = 0;
     int getp[2];

@@ -77,10 +77,10 @@ void checkTerminate()
 void requestPath()
 {
     string s;
-    int bytesRead, oldbytesRead;
     int numberOfState;
     double x, y, heading, speed, otime;
-    char response[8192];
+    FILE *readstream = fdopen (communication_With_Planner.getWpipe(), "r");
+    char response[1024];
     double duration_time; //,time_bound;
     while (!request_start || !request_start1)
         this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -117,17 +117,18 @@ void requestPath()
         }
         mtx_obs.unlock();
         double start_time = getCurrentTime();
-        communication_With_Planner.cread(response, 8192);
+
+        fgets(response, sizeof response, readstream);
         if (!strncmp(response, "done", 4))
         {
             running = 0;
             break;
         }
         //truncate all result if time out or just keep it??????????
-        sscanf(response, "plan %d\n%n", &numberOfState, &bytesRead);
+        sscanf(response, "plan %d\n", &numberOfState);
 
         mtx_path.lock();
-        oldbytesRead = bytesRead;
+        
         //time_bound = getCurrentTime();
         for (int i = 0; i < path.size(); i++)
         {
@@ -136,9 +137,8 @@ void requestPath()
         }
         for (int i = 0; i < numberOfState; i++)
         {
-            sscanf(response + bytesRead, "%lf %lf %lf %lf %lf\n%n", &x, &y, &heading, &speed, &otime, &bytesRead);
-            bytesRead += oldbytesRead;
-            oldbytesRead = bytesRead;
+            fgets(response, sizeof response, readstream);
+            sscanf(response, "%lf %lf %lf %lf %lf\n", &x, &y, &heading, &speed, &otime);
 
             // dObjectPar o =(ObjectPar(x, y, heading, speed, otime));
             // cerr << current_location.otime << endl;
@@ -147,24 +147,23 @@ void requestPath()
             // if (time_bound > otime)
             //   continue;
 
-            newpath.push_back(ObjectPar(x, y, heading, speed, otime + estimateStart.otime));
+            newpath.push_back(ObjectPar(x, y, heading, speed, otime+estimateStart.otime));
 
             if (addestimate && otime - newpath[0].otime > 0.99999)
             {
                 difx = current_location.x - previousAction.x;
                 dify = current_location.y - previousAction.y;
                 //estimateStart = ObjectPar(x + difx, y + dify, heading, speed, otime+estimateStart.otime);
-                estimateStart = ObjectPar(x, y, heading, speed, otime + estimateStart.otime);
+                estimateStart = ObjectPar(x, y, heading, speed, otime+estimateStart.otime);
                 addestimate = 0;
             }
         }
-
         if (addestimate)
         {
             difx = current_location.x - previousAction.x;
             dify = current_location.y - previousAction.y;
             //estimateStart = ObjectPar(x + difx, y + dify, heading, speed, otime);
-            estimateStart = ObjectPar(x, y, heading, speed, otime + estimateStart.otime);
+            estimateStart = ObjectPar(x, y, heading, speed, otime+estimateStart.otime);
             addestimate = 0;
         }
         path = newpath;
@@ -244,10 +243,16 @@ void sendPath( string &s)
 {
     int pathd = pathindex - 1;
     int size = path.size() - pathd;
-    s += "path " + to_string(size) + "\n";
-    for(int i = pathd; i< path.size(); i++ )
-        s +=path[i].toString() + "\n";
-    s+='\0';
+     if(size > pathd + 200)
+         size = pathd + 200;
+    s += "path " + to_string(200) + "\n";
+    for(int i = pathd; i < size; i++ )
+    {
+        s += path[i].toString();
+        if(size - 1 != i)
+            s += '\n';
+    }
+     s += '\0';
 
         
 }
@@ -271,7 +276,7 @@ void sendAction()
             //communication_With_Controler.cwrite(path[pathindex++].toString());
             cerr << "EXECUTIVE::SEND " << path[pathindex].toString() << endl;
             s+=path[pathindex++].toString()+"\n";
-            sendPath(s);
+            //sendPath(s);
             communication_With_Controler.cwrite(s);
             
             if (path.size() >= pathindex)
@@ -307,8 +312,9 @@ void print_map(string file)
             string w = line;
             getline(f, line);
             string h = line;
+            cerr << "EXEUTIVE::START " << w << " " << h << endl;
             cerr << "EXECUTIVE::MAP::" + w + " " + h << endl;
-            communication_With_Planner.cwrite("map 1 " + w + " " + h);
+            communication_With_Planner.cwrite("map 10 " + w + " " + h);
             while (getline(f, line))
                 communication_With_Planner.cwrite(line);
             
@@ -342,10 +348,8 @@ int main(int argc, char *argv[])
    
     print_map(file);
     
-    cover.push_back(point(0,0));
-    cover.push_back(point(800,800));
-    cover.push_back(point(1500,1900));
-    cover.push_back(point(400,0));
+    cover.push_back(point(15,15));
+    cover.push_back(point(15,85));
     int size = cover.size();
     communication_With_Planner.cwrite("path to cover " + to_string(size));
     for(point p: cover)
@@ -353,6 +357,7 @@ int main(int argc, char *argv[])
     
     char done[100];
     communication_With_Planner.cread(done, 100);
+    cerr << "EXEUTIVE::START" << endl;
     requestPath();
 
     thread_for_controller.join();

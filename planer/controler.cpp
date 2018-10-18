@@ -30,28 +30,40 @@ string previousrequestString;
 string default_Command = "0,0";
 int sendPipeToParent, receivePipeFromParent;
 
-void readpath(char locationString[],int byteREAD)
+void readpath(FILE* readstream)
 {
-    path = locationString + byteREAD;
-    cout << path << flush;
+    int num;
+    char locationString[1024];
+    fgets(locationString, sizeof locationString, readstream);
+    sscanf(locationString, "path %d\n", &num);
+    path = locationString;
+    
+    while(num--)
+    {
+        fgets(locationString, sizeof locationString, readstream);
+        path+=locationString;
+    }
+    cout << path << endl << flush;
 }
 
 void requestAction()
 {
-    int byteRead = 0;
+    FILE *readstream = fdopen (receivePipeFromParent, "r");
+    string s;
     
     while (running)
     {
-        char locationString[2560];
-        int oldbyteRead = 0;
+        char locationString[1024];
         mtx.lock();
-        read(receivePipeFromParent, locationString, 2560);
-        sscanf(locationString, "%lf %lf %lf %lf %lf\n%n", &start.x, &start.y, &start.heading, &start.speed, &start.otime,&byteRead);
-        oldbyteRead += byteRead;
-        sscanf(locationString+oldbyteRead, "%lf %lf %lf %lf %lf\n%n", &action.x, &action.y, &action.heading, &action.speed, &action.otime,&byteRead);
-        oldbyteRead += byteRead;
-        readpath(locationString,oldbyteRead);
-        // cerr << "CONTROLLER :: start ";
+        
+        fgets(locationString, sizeof locationString, readstream);
+        sscanf(locationString, "%lf %lf %lf %lf %lf\n", &start.x, &start.y, &start.heading, &start.speed, &start.otime);
+        //cerr << "CONTROLLER::Start" << locationString << endl;
+        fgets(locationString, sizeof locationString, readstream);
+        sscanf(locationString, "%lf %lf %lf %lf %lf\n", &action.x, &action.y, &action.heading, &action.speed, &action.otime);
+        //cerr << "CONTROLLER::action" << locationString << endl;
+        //readpath(readstream);
+        
         // start.printerror();
         // cerr << "CONTROLLER :: action ";
         // action.printerror();
