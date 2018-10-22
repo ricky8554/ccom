@@ -130,7 +130,7 @@ class DynamicObsSim:
         if file_world != '':
             f=open(file_world, "r")
             f1 = f.readlines()
-            for i in xrange(0, len(f1)):
+            for i in range(0, len(f1)):
                     if  i == 0 :
                         self.xlim = np.abs(int(int(f1[i])))
                         maxx = np.abs(int(int(f1[i])))
@@ -138,7 +138,7 @@ class DynamicObsSim:
                         self.ylim = np.abs(int(int(f1[i])))
                         maxy = np.abs(int(int(f1[i])))
                     else:
-                        for j in xrange(0, len(f1[i])):
+                        for j in range(0, len(f1[i])):
                             if f1[i][j] == '@':
                                 self.curr_x = self.wpt_x = j
                                 self.curr_y = self.wpt_y = ( maxy - i + 2 )
@@ -226,7 +226,7 @@ class DynamicObsSim:
                 self.future_y = []
                 self.future_heading = []
 
-                for i in xrange(0,n):
+                for i in range(0,n):
                     data = self.soc.recv(4096)
                     data1 = data.split(' ');
                     self.future_x.append(float(data1[0]))

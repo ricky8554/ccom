@@ -95,7 +95,7 @@ class PLOT:
         self.yobs = []
         self.hobs = []
         self.exp_img = []
-        for i in xrange(1, 8):
+        for i in range(1, 8):
             self.exp_img.append(pygame.image.load(
                 'explosion/{}.png'.format(i)))
         # self.exp_img = [pygame.image.load(os.path.join('explosion', img)).convert_alpha()
@@ -203,7 +203,7 @@ class PLOT:
                 sprites.add(Explosion(self.scale_item(
                     self.curr_x, self.curr_y), self.exp_img))
                 return
-        for i in xrange(0, self.nobs):
+        for i in range(0, self.nobs):
             if 2.25 > self.dist(self.xobs[i], self.curr_x, self.yobs[i], self.curr_y):
                 sprites.add(Explosion(self.scale_item(
                     self.curr_x, self.curr_y), self.exp_img))
@@ -223,7 +223,7 @@ class PLOT:
                                                     self.starth), (self.startw+self.scalew, self.starth+self.scaleh))
         scaleh = self.scaleh/(self.lines+1)
         scalew = self.scalew/(self.lines+1)
-        for i in xrange(1, self.lines+1):
+        for i in range(1, self.lines+1):
             pygame.draw.line(self.display, Color_line_middle, self.scale_xy(
                 0, i * scaleh), self.scale_xy(self.scalew, i * scaleh))
             pygame.draw.line(self.display, Color_line_middle, self.scale_xy(
@@ -251,7 +251,7 @@ class PLOT:
                 self.future_heading[0], Color_CYAN, *self.scale_item(self.future_y[0], self.future_x[0]))
             if size > 1:
                 decay = (255 - 20) / (size - 1)
-                for i in xrange(1, size):
+                for i in range(1, size):
                     c = (255 - decay * i, 0, 255 - decay * i)
                     self.draw_vehicle(
                         self.future_heading[i], c, *self.scale_item(self.future_y[i], self.future_x[i]))
@@ -263,7 +263,7 @@ class PLOT:
         #                   (self.scale_item(self.curr_x, self.curr_y)))
 
     def draw_path(self):
-        for index in xrange(1, len(self.pathList)):
+        for index in range(1, len(self.pathList)):
             pygame.draw.line(self.display, Color_line_path, self.scale_path(
                 *self.pathList[index-1]), self.scale_path(*self.pathList[index]))
 
@@ -284,7 +284,7 @@ class PLOT:
         tY = []
         c = math.cos(angle)
         s = math.sin(angle)
-        for i in xrange(3):
+        for i in range(3):
             tX.append(self.triangleX[i]*c - self.triangleY[i]*s + x)
             tY.append(self.triangleX[i]*s + self.triangleY[i]*c + y)
         pygame.draw.polygon(self.display, color, ((
@@ -293,7 +293,7 @@ class PLOT:
     def draw_text(self):
         scaleh = self.scaleh/(self.lines+1)
         scalew = self.scalew/(self.lines+1)
-        for i in xrange(0, self.lines+2):
+        for i in range(0, self.lines+2):
             text = str(int(self.moveY+(self.lines - i + 1)
                            * self.maxY/(self.lines + 1)))
             textsurface = self.myfont.render(text, True, (0, 0, 0))
