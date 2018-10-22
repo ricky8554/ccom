@@ -4,6 +4,8 @@ from pygame.locals import *
 import threading
 import sys
 import math
+import os
+import glob
 
 Color_line = (0, 0, 0)
 Color_line_middle = (180, 180, 180)
@@ -15,8 +17,28 @@ Color_PURPLE = (255, 0, 255)
 Color_CYAN = (0, 255, 255)
 
 
+# change from https://stackoverflow.com/questions/40399049/parallel-display-updates-for-animations-in-pygame for explosion
+class Explosion(pygame.sprite.Sprite):
+    def __init__(self, pos, exp_img1):
+        pygame.sprite.Sprite.__init__(self)
+        self.state = 0
+        self.exp_img = exp_img1
+        self.image = self.exp_img[0]
+        self.rect = self.image.get_rect(center=pos)
+
+    def update(self):
+        self.state += 1
+        self.image = self.exp_img[self.state]
+        self.rect = self.image.get_rect(center=self.rect.center)
+        if self.state > 5:
+            self.kill()
+
+
+sprites = pygame.sprite.Group()
+
+
 class PLOT:
-    def __init__(self, static_obs,xlim,ylim):
+    def __init__(self, static_obs, xlim, ylim):
         self._running = True
         self.display = None
         self._image_surf = None
@@ -24,14 +46,17 @@ class PLOT:
         self.screenW = 600
         self.maxX = xlim
         self.maxY = ylim
+        self.xlim = xlim
+        self.ylim = ylim
         self.lines = 9
         self.originX = 0
         self.originY = 0
         self.moveX = 0
         self.moveY = 0
+        self.cost = 0
         self.future_x = []
         self.future_y = []
-        self.future_heading =[]
+        self.future_heading = []
         self.triangleX = (0, -5, 5)
         self.triangleY = (-10, 10, 10)
         self.static_obs = static_obs
@@ -64,6 +89,12 @@ class PLOT:
         self.xobs = []
         self.yobs = []
         self.hobs = []
+        self.exp_img = []
+        for i in xrange(1, 8):
+            self.exp_img.append(pygame.image.load(
+                'explosion/{}.png'.format(i)))
+        # self.exp_img = [pygame.image.load(os.path.join('explosion', img)).convert_alpha()
+        #           for img in os.listdir('explosion')]
 
     def on_event(self, event):
         if event.type == QUIT:
@@ -82,20 +113,52 @@ class PLOT:
                 self.originY -= self.scaleh/(self.lines+1)
                 self.moveY -= self.maxY / (self.lines+1)
             elif event.key == pygame.K_MINUS:
-                self.moveY /= self.maxY / (self.lines+1)
-                self.moveX /= self.maxX / (self.lines+1)
-                self.maxX += 100
-                self.maxY += 100
-                self.moveY *= self.maxY / (self.lines+1)
-                self.moveX *= self.maxX / (self.lines+1)
+                d = 1 if self.maxX < 100 and self.maxY < 100 else 10
+                p = d*10
+                x, y = self.scale_item(self.curr_x, self.curr_y)
+                x = int(round(((x - self.startw)/self.scalew)*10, 5))
+                y = int(round(((1 - (y - self.starth)/self.scaleh) * 10), 5))
+                self.maxX += p
+                self.maxY += p
+                self.originY = self.scaleh * \
+                    ((int(self.curr_y) / d) * d / float(self.maxY)) - \
+                    y*self.scaleh/(self.lines+1)
+                self.originX = -self.scalew * \
+                    ((int(self.curr_x) / d) * d / float(self.maxX)) + \
+                    x*self.scalew/(self.lines+1)
+                cy = (int(self.curr_y) / d) * d
+                cx = (int(self.curr_x) / d) * d
+                self.moveY = cy - y * self.maxY / (self.lines+1)
+                self.moveX = cx - x * self.maxX / (self.lines+1)
             elif event.key == pygame.K_EQUALS:
-                if self.maxX >= 200:
-                    self.moveY /= self.maxY / (self.lines+1)
-                    self.moveX /= self.maxX / (self.lines+1)
-                    self.maxX -= 100
-                    self.maxY -= 100
-                    self.moveY *= self.maxY / (self.lines+1)
-                    self.moveX *= self.maxX / (self.lines+1)
+                if self.maxX >= 20 and self.maxY >= 20:
+                    d = 10 if self.maxX >= 200 and self.maxY >= 200 else 1
+                    p = d*10
+                    x, y = self.scale_item(self.curr_x, self.curr_y)
+                    x = int(round(((x - self.startw)/self.scalew)*10, 5))
+                    y = int(round(((1 - (y - self.starth)/self.scaleh) * 10), 5))
+                    self.maxX -= p
+                    self.maxY -= p
+                    self.originY = self.scaleh * \
+                        ((int(self.curr_y) / d) * d / float(self.maxY)) - \
+                        y*self.scaleh/(self.lines+1)
+                    self.originX = -self.scalew * \
+                        ((int(self.curr_x) / d) * d / float(self.maxX)) + \
+                        x*self.scalew/(self.lines+1)
+                    cy = (int(self.curr_y) / d) * d
+                    cx = (int(self.curr_x) / d) * d
+                    self.moveY = cy - y * self.maxY / (self.lines+1)
+                    self.moveX = cx - x * self.maxX / (self.lines+1)
+            elif event.key == pygame.K_SPACE:
+                d = 10 if self.maxX >= 100 and self.maxY >= 100 else 1
+                self.maxY = self.ylim
+                self.maxX = self.xlim
+                self.originY = self.scaleh * \
+                    ((int(self.curr_y) / d) * d / float(self.maxY))
+                self.originX = -self.scalew * \
+                    ((int(self.curr_x) / d) * d / float(self.maxX))
+                self.moveY = (int(self.curr_y) / d) * d
+                self.moveX = (int(self.curr_x) / d) * d
 
     def on_loop(self):
         pass
@@ -108,6 +171,10 @@ class PLOT:
         self.draw_text()
         self.draw_future()
         self.draw_current()
+        # screen.fill((0, 0, 0))
+        self.checkCollision()
+        sprites.draw(self.display)
+        sprites.update()
         pygame.display.flip()
 
     def on_cleanup(self):
@@ -121,8 +188,24 @@ class PLOT:
         # self.stop()
         self.pathList = [(curr_x, curr_y)]
         self.updateInformation(
-            curr_x, curr_y, start_heading, nobs, xobs, yobs, hobs,[],[],[])
+            curr_x, curr_y, start_heading, nobs, xobs, yobs, hobs, [], [], [])
         self.update()
+
+    def checkCollision(self):
+        for i in self.static_obs:
+            x, y = i
+            if x <= self.curr_x < x + 1 and y <= self.curr_y < y + 1:
+                sprites.add(Explosion(self.scale_item(
+                    self.curr_x, self.curr_y), self.exp_img))
+                return
+        for i in xrange(0, self.nobs):
+            if 2.25 > self.dist(self.xobs[i], self.curr_x, self.yobs[i], self.curr_y):
+                sprites.add(Explosion(self.scale_item(
+                    self.curr_x, self.curr_y), self.exp_img))
+                return
+
+    def dist(self, x, x1, y, y1):
+        return (x - x1)**2 + (y - y1)**2
 
     def draw_line(self):
         pygame.draw.line(self.display, Color_line, (self.startw,
@@ -142,7 +225,7 @@ class PLOT:
                 i * scalew, 0), self.scale_xy(i*scalew, self.scaleh))
             # self.draw_text(self.scalew,i * scaleh, i * self.maxX/(self.lines + 1) )
 
-    def updateInformation(self, curr_x, curr_y, start_heading, nobs, xobs, yobs, hobs,future_x,future_y,future_heading):
+    def updateInformation(self, curr_x, curr_y, start_heading, nobs, xobs, yobs, hobs, future_x, future_y, future_heading):
         if self.pathList[-1] != (curr_x, curr_y):
             self.pathList.append((curr_x, curr_y))
         self.curr_x = curr_x
@@ -157,17 +240,20 @@ class PLOT:
         self.future_y = future_y
 
     def draw_future(self):
-        size = len(self.future_heading) 
-        if size > 0 :
-            self.draw_vehicle(self.future_heading[0],Color_CYAN,*self.scale_item(self.future_y[0], self.future_x[0]))
+        size = len(self.future_heading)
+        if size > 0:
+            self.draw_vehicle(
+                self.future_heading[0], Color_CYAN, *self.scale_item(self.future_y[0], self.future_x[0]))
             if size > 1:
-                decay = (255 - 100) / (size - 1)
-                for i in xrange(1,size):
+                decay = (255 - 20) / (size - 1)
+                for i in xrange(1, size):
                     c = (255 - decay * i, 0, 255 - decay * i)
-                    self.draw_vehicle(self.future_heading[i],c,*self.scale_item(self.future_y[i], self.future_x[i]))
+                    self.draw_vehicle(
+                        self.future_heading[i], c, *self.scale_item(self.future_y[i], self.future_x[i]))
 
     def draw_current(self):
-        self.draw_vehicle(self.start_heading,Color_BLUE,*self.scale_item(self.curr_x, self.curr_y))
+        self.draw_vehicle(self.start_heading, Color_BLUE, *
+                          self.scale_item(self.curr_x, self.curr_y))
         # self.display.blit(pygame.transform.rotate(self._image_surf, -1*math.degrees(self.start_heading)),
         #                   (self.scale_item(self.curr_x, self.curr_y)))
 
@@ -184,8 +270,9 @@ class PLOT:
         for obs in self.static_obs:
             self.draw_static_obs(*obs)
 
-    def draw_static_obs(self,x,y):
-        pygame.draw.polygon(self.display, (0,0,0), (self.scale_item(x,y),self.scale_item(x+1,y),self.scale_item(x+1,y+1),self.scale_item(x,y+1)))
+    def draw_static_obs(self, x, y):
+        pygame.draw.polygon(self.display, (0, 0, 0), (self.scale_item(x, y), self.scale_item(
+            x+1, y), self.scale_item(x+1, y+1), self.scale_item(x, y+1)))
 
     def draw_vehicle(self, angle, color, x, y):
         tX = []
@@ -203,7 +290,7 @@ class PLOT:
         scalew = self.scalew/(self.lines+1)
         for i in xrange(0, self.lines+2):
             text = str(int(self.moveY+(self.lines - i + 1)
-                           * self.maxX/(self.lines + 1)))
+                           * self.maxY/(self.lines + 1)))
             textsurface = self.myfont.render(text, True, (0, 0, 0))
             x, y = self.scale_xy(0, (i) * scaleh)
             x -= textsurface.get_width() + 10
@@ -216,8 +303,15 @@ class PLOT:
             x -= textsurface.get_width() / 2
             y += 10
             self.display.blit(textsurface, (x, y))
-        # textsurface = self.myfont.render(str(int(t)), True, (0, 0, 0))
-        # self.display.blit(textsurface,(x,y))
+
+        text = "Current Location:(  {:.2f} , {:.2f}  )".format(
+            self.curr_x, self.curr_y)
+        textsurface = self.myfont.render(text, True, (0, 0, 0))
+        self.display.blit(textsurface, (20, 10))
+        text = "Cost:(  {:.2f}  )".format(self.cost)
+        self.cost += 0.05
+        textsurface1 = self.myfont.render(text, True, (0, 0, 0))
+        self.display.blit(textsurface1, (20, 10 + textsurface.get_height()))
 
     def update(self):
         for event in pygame.event.get():
