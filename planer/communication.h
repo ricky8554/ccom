@@ -44,7 +44,6 @@ class Communitcation
     pid_t pid = 0;
     int getp[2];
     int sendp[2];
-    char send[256];
     int status;
 };
 

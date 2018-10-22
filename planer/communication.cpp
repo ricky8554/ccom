@@ -41,7 +41,7 @@ void Communitcation::set(std::string excutivepath,bool bindStdin, bool bindStdou
             
             close(sendp[1]);
             close(getp[0]);
-            execl(excutivepath.c_str(),to_string(sendp[0]).c_str(),to_string(getp[1]).c_str(), (char *)NULL);
+            execl(excutivepath.c_str(),excutivepath.c_str(),to_string(sendp[0]).c_str(),to_string(getp[1]).c_str(), (char *)NULL);
         }
         else
         {
@@ -56,7 +56,7 @@ void Communitcation::set(std::string excutivepath,bool bindStdin, bool bindStdou
             close(sendp[1]);
             close(getp[0]);
             close(getp[1]);
-            execl(excutivepath.c_str(), (char *)NULL);
+            execl(excutivepath.c_str(),excutivepath.c_str(), (char *)NULL);
         }
 
         

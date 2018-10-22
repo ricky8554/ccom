@@ -159,8 +159,8 @@ void sendAction()
 
 int main(int argc, char *argv[])
 {   
-    receivePipeFromParent = stoi(argv[0]);
-    sendPipeToParent = stoi(argv[1]);
+    receivePipeFromParent = stoi(argv[1]);
+    sendPipeToParent = stoi(argv[2]);
     cout.precision(numeric_limits<float>::digits10 + 2);
     cerr.precision(numeric_limits<float>::digits10 + 2);
     //cerr << "CONTROLLER INITIALIZE" << endl;

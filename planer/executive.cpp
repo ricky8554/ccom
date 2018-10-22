@@ -79,7 +79,7 @@ void requestPath()
     string s;
     int numberOfState;
     double x, y, heading, speed, otime;
-    FILE *readstream = fdopen (communication_With_Planner.getWpipe(), "r");
+    FILE *readstream = fdopen(communication_With_Planner.getWpipe(), "r");
     char response[1024];
     double duration_time; //,time_bound;
     while (!request_start || !request_start1)
@@ -95,10 +95,10 @@ void requestPath()
         mtx_cover.lock();
         int size = newcover.size();
         communication_With_Planner.cwrite("newly covered " + to_string(size));
-        for(point p: newcover)
+        for (point p : newcover)
         {
             communication_With_Planner.cwrite(to_string(p.x) + " " + to_string(p.y));
-            cerr << "EXECUTIVE::NEWLYCOVERD:: " <<  p.x << " " << p.y << endl;
+            cerr << "EXECUTIVE::NEWLYCOVERD:: " << p.x << " " << p.y << endl;
         }
         newcover.clear();
         mtx_cover.unlock();
@@ -106,10 +106,11 @@ void requestPath()
         //add covered method
         estimateStart = current_location;
         communication_With_Planner.cwrite("start state " + estimateStart.toString());
-        s = "dynamic obs " + to_string(dyamic_obstacles.size());
-        communication_With_Planner.cwrite(s);
         mtx_obs.lock();
-        for (int i = 0; i < dyamic_obstacles.size(); i++)
+        int d_obstacles_size = dyamic_obstacles.size();
+        s = "dynamic obs " + to_string(d_obstacles_size);
+        communication_With_Planner.cwrite(s);
+        for (int i = 0; i < d_obstacles_size; i++)
         {
             s = to_string(i);
             s += " " + dyamic_obstacles[i].toString();
@@ -128,14 +129,17 @@ void requestPath()
         sscanf(response, "plan %d\n", &numberOfState);
 
         mtx_path.lock();
-        
+
         //time_bound = getCurrentTime();
-        for (int i = 0; i < path.size(); i++)
+        int path_size = path.size();
+        for (int i = 0; i < path_size; i++)
         {
             if (path[i].otime <= estimateStart.otime)
                 newpath.push_back(path[i]);
+            else
+                break;
         }
-        for (int i = 0; i < numberOfState; i++)
+        for (int i = 0; i < numberOfState; i++) // if no new path then keep old path
         {
             fgets(response, sizeof response, readstream);
             sscanf(response, "%lf %lf %lf %lf %lf\n", &x, &y, &heading, &speed, &otime);
@@ -146,24 +150,26 @@ void requestPath()
             // cerr << getCurrentTime() << endl;
             // if (time_bound > otime)
             //   continue;
+            cerr << "EXECUTIVE::RECEVED" << ObjectPar(x, y, heading, speed, otime).toString() << endl;
 
-            newpath.push_back(ObjectPar(x, y, heading, speed, otime+estimateStart.otime));
+            newpath.push_back(ObjectPar(x, y, heading, speed, otime));
 
             if (addestimate && otime - newpath[0].otime > 0.99999)
             {
                 difx = current_location.x - previousAction.x;
                 dify = current_location.y - previousAction.y;
                 //estimateStart = ObjectPar(x + difx, y + dify, heading, speed, otime+estimateStart.otime);
-                estimateStart = ObjectPar(x, y, heading, speed, otime+estimateStart.otime);
+                estimateStart = ObjectPar(x, y, heading, speed, otime);
                 addestimate = 0;
             }
         }
-        if (addestimate)
+
+        if (addestimate && numberOfState != 0) // change to recove the old path if exist;
         {
             difx = current_location.x - previousAction.x;
             dify = current_location.y - previousAction.y;
             //estimateStart = ObjectPar(x + difx, y + dify, heading, speed, otime);
-            estimateStart = ObjectPar(x, y, heading, speed, otime+estimateStart.otime);
+            estimateStart = ObjectPar(x, y, heading, speed, otime);
             addestimate = 0;
         }
         path = newpath;
@@ -190,11 +196,11 @@ void requestWorldInformation()
             sscanf(locationString + 9, "%lf,%lf,%lf,%lf,%lf [%d]", &current_location.x, &current_location.y, &current_location.heading, &current_location.speed, &current_location.otime, &h);
             mtx_cover.lock();
             auto it = cover.begin();
-            while(it != cover.end())
+            while (it != cover.end())
             {
                 float x = it->x - current_location.x;
                 float y = it->y - current_location.y;
-                if(sqrt(x*x + y*y) <=10)
+                if (sqrt(x * x + y * y) <= 10)
                 {
                     auto it1 = it;
                     newcover.push_back(*it);
@@ -215,17 +221,20 @@ void requestWorldInformation()
             bytesRead = 9;
             oldbytesRead = bytesRead;
             mtx_obs.lock();
+            int d_obstacles_size = dyamic_obstacles.size();
             while (sscanf(locationString + bytesRead, "%d,%lf,%lf,%lf,%lf,%lf\n%n", &index, &x, &y, &heading, &speed, &otime, &bytesRead) == 6)
             {
                 bytesRead += oldbytesRead;
                 oldbytesRead = bytesRead;
-                if (index < dyamic_obstacles.size())
-                    dyamic_obstacles[index].set(x, y, heading, speed, otime);
-                else
-                    dyamic_obstacles.push_back(ObjectPar(x, y, heading, speed, otime)); //need to more careful to check if index is right after
-                                                                                        // dyamic_obstacles[index].printerror();
+                index < d_obstacles_size ? dyamic_obstacles[index].set(x, y, heading, speed, otime): dyamic_obstacles.push_back(ObjectPar(x, y, heading, speed, otime));
+                // if (index < dyamic_obstacles.size())
+                //     dyamic_obstacles[index].set(x, y, heading, speed, otime);
+                // else
+                //     dyamic_obstacles.push_back(ObjectPar(x, y, heading, speed, otime)); 
+                //     //need to more careful to check if index is right after
+                //     // dyamic_obstacles[index].printerror();
             }
-            while (index >= dyamic_obstacles.size())
+            while (index >= d_obstacles_size)
                 dyamic_obstacles.pop_back();
             mtx_obs.unlock();
         }
@@ -239,22 +248,20 @@ void requestWorldInformation()
     }
 }
 
-void sendPath( string &s)
+void sendPath(string &s)
 {
     int pathd = pathindex - 1;
     int size = path.size() - pathd;
-     if(size > pathd + 200)
-         size = pathd + 200;
+    if (size > pathd + 200)
+        size = pathd + 200;
     s += "path " + to_string(200) + "\n";
-    for(int i = pathd; i < size; i++ )
+    for (int i = pathd; i < size; i++)
     {
         s += path[i].toString();
-        if(size - 1 != i)
+        if (size - 1 != i)
             s += '\n';
     }
-     s += '\0';
-
-        
+    s += '\0';
 }
 
 void sendAction()
@@ -263,23 +270,24 @@ void sendAction()
     {
 
         mtx_path.lock();
+        int path_size = path.size();
 
-        if (send && path.size() > pathindex)
+        if (send && path_size > pathindex)
         {
             string s = "";
             // << "EXECUTIVE::SEND::" + path[pathindex].toString() << endl;
-            s+=current_location.toString()+"\n";
+            s += current_location.toString() + "\n";
             //communication_With_Controler.cwrite(current_location.toString());
             //path[pathindex].x += difx;
             //path[pathindex].y += dify;
             previousAction = path[pathindex];
             //communication_With_Controler.cwrite(path[pathindex++].toString());
             cerr << "EXECUTIVE::SEND " << path[pathindex].toString() << endl;
-            s+=path[pathindex++].toString()+"\n";
+            s += path[pathindex++].toString() + "\n";
             //sendPath(s);
             communication_With_Controler.cwrite(s);
-            
-            if (path.size() >= pathindex)
+
+            if (path_size >= pathindex)
             {
                 int sleeptime = (path[pathindex].otime - previousAction.otime) * 1000;
                 mtx_path.unlock();
@@ -317,12 +325,12 @@ void print_map(string file)
             communication_With_Planner.cwrite("map 10 " + w + " " + h);
             while (getline(f, line))
                 communication_With_Planner.cwrite(line);
-            
+
             f.close();
         }
         return;
     }
-    cerr << "EXECUTIVE::MAP::DEFAULT"<< endl;
+    cerr << "EXECUTIVE::MAP::DEFAULT" << endl;
     communication_With_Planner.cwrite("map 1 2000 2000");
     for (int i = 0; i < 2000; i++)
         communication_With_Planner.cwrite("________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________");
@@ -345,16 +353,15 @@ int main(int argc, char *argv[])
     communication_With_Planner.cwrite("max speed 2.75");
     communication_With_Planner.cwrite("max turning radius 0.75");
 
-   
     print_map(file);
-    
-    cover.push_back(point(15,15));
-    cover.push_back(point(15,85));
+
+    cover.push_back(point(10, 10));
+    cover.push_back(point(9, 0));
     int size = cover.size();
     communication_With_Planner.cwrite("path to cover " + to_string(size));
-    for(point p: cover)
+    for (point p : cover)
         communication_With_Planner.cwrite(to_string(p.x) + " " + to_string(p.y));
-    
+
     char done[100];
     communication_With_Planner.cread(done, 100);
     cerr << "EXEUTIVE::START" << endl;
