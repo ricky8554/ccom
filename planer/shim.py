@@ -87,7 +87,7 @@ def open_executive():
         os.close(pwrite)
         os.close(cread)
         os.close(cwrite)
-        os.execl('executive', '')
+        os.execl('executive', 'executive')
         sys.exit(0)
 
 
