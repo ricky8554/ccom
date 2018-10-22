@@ -61,7 +61,12 @@ class PLOT:
         self.triangleY = (-10, 10, 10)
         self.static_obs = static_obs
         pygame.font.init()
-        self.myfont = pygame.font.Font("r.ttf", 15)
+        try:
+            self.myfont = pygame.font.Font("r.ttf", 15)
+        except:
+            self.myfont = pygame.font.SysFont(None, 20)
+        
+            
 
     def on_init(self):
         pygame.init()
