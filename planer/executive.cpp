@@ -240,9 +240,9 @@ void requestWorldInformation()
         }
         else
         {
-            cerr << "EXECUTIVE::ERROR REQUEST" << endl;
-            cerr << locationString << endl;
-            cerr << "END ERROR" << endl;
+            //cerr << "EXECUTIVE::ERROR REQUEST" << endl;
+            //cerr << locationString << endl;
+            //cerr << "END ERROR" << endl;
         }
         checkTerminate();
     }
