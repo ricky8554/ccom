@@ -22,8 +22,8 @@ ObjectPar start;
 ObjectPar action;
 ObjectPar  oldaction= ObjectPar(0,0,0,0,0);
 vector<ObjectPar> dyamic_obstacles;
-string path;
-double currentTimestamp = -1;
+string path = "";
+double currentTimestamp = -1,previous_location_time = -1;
 double currenttime_for_action = -1;
 string pheading;
 string previousrequestString;
@@ -40,10 +40,11 @@ void readpath(FILE* readstream)
     
     while(num--)
     {
+        char locationString[1024];
         fgets(locationString, sizeof locationString, readstream);
         path+=locationString;
     }
-    cout << path << endl << flush;
+    
 }
 
 void requestAction()
@@ -62,7 +63,7 @@ void requestAction()
         fgets(locationString, sizeof locationString, readstream);
         sscanf(locationString, "%lf %lf %lf %lf %lf\n", &action.x, &action.y, &action.heading, &action.speed, &action.otime);
         //cerr << "CONTROLLER::action" << locationString << endl;
-        //readpath(readstream);
+        readpath(readstream);
         
         // start.printerror();
         // cerr << "CONTROLLER :: action ";
@@ -89,8 +90,9 @@ void requestAction()
 void sendAction()
 {
     //Communitcation communication_With_Controler("controler", 1, 1, 1);
+    
     while (running)
-    {
+    {   
         if(getppid() == 1)
         {
             cerr << "CONTROLER TERMINATE" << endl;
@@ -100,37 +102,31 @@ void sendAction()
         if (plan)//use mutex instead of busy waiting
         {
             mtx.lock();
-            if (fabs(currentTimestamp - action.otime) < 0.0000001)
+            if (fabs(currentTimestamp - action.otime) < 0.0000001 && fabs(previous_location_time - start.otime) < 0.0000001)
             {
                 
                 if (currenttime_for_action > action.otime)
                 {
-                    //cerr << "CONTROLLER::RECEIVED::HELLO1"<<endl;
                     command += pheading + ",0";
-                    // start mutex?
-                    //currenttime_for_action = start.otime;
                 }
                 else
                 {
-                    //cerr << "CONTROLLER::RECEIVED::HELLO2"<<endl;
                     command += previousrequestString;
                     currenttime_for_action += 0.05;
                 }
             }
             else
             {
-               // cerr << "CONTROLLER INITIALIZE SEND REQEST" << endl;
                 currentTimestamp = action.otime;
-                //mutex for start and action
-                if(oldaction.otime < start.otime)
-                {
-                    oldaction = start;
-                }
-                //double ydis = action.y - oldaction.y;
-                //double xdis = action.x - oldaction.x;
+                previous_location_time = start.otime;
+                // if(oldaction.otime < start.otime)
+                // {
+                //     oldaction = start;
+                // }
+                oldaction = start;
                 double ydis = action.y - start.y;
                 double xdis = action.x - start.x;
-                //cerr << "CONTROLER " << start.x << " " << start.y  << " "<< action.x << " " << action.y << endl;
+                // cerr << "CONTROLER " << start.x << " " << start.y  << " "<< action.x << " " << action.y << endl;
                 float heading = atan2(xdis, ydis);
                 //cerr << "CONTROLER " <<ydis << " "<< xdis << " " << heading << endl;
                 if(heading < 0)
@@ -138,18 +134,24 @@ void sendAction()
                     heading += M_PI*2;
                 }
                 double speed = sqrt(xdis * xdis + ydis * ydis) / (fabs(action.otime - oldaction.otime));
+
                 currenttime_for_action = oldaction.otime + 0.05;
-                oldaction = action;
+                //oldaction = action;
                 //mutex for start and action
                 pheading = to_string(heading);
                 previousrequestString = pheading + "," + to_string(speed);
+                // pheading = to_string(action.heading);
+                // previousrequestString = pheading + "," + to_string(action.speed);
                 command += previousrequestString;
                 cerr << "CONTROLER:: " <<command << endl;
             //    cerr << "CONTROLLER Command " << command <<  " " << speed << " " << heading << endl;
             }
             if(command.size() != 0)
             {
+                command = path + "\n"+ command;
                 cout << command << endl << flush;
+               
+                //cerr << command << endl;
             }
             mtx.unlock();
         }

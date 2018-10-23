@@ -62,13 +62,11 @@ def recv_control():
                 sending = raw_input() + '\n'
                 s3.sendto(sending.encode('utf-8'), ('localhost', UDP_CTRL_PORT))
                 count -= 1
-        elif line.strip() != '':
+            line = raw_input()
             s3.sendto(line.encode('utf-8'), ('localhost', UDP_CTRL_PORT))
     sys.stderr.write('EOF encountered.')
 
 # open the pipe to communicate with executive
-
-
 def open_executive():
     pread, cwrite = os.pipe()
     cread, pwrite = os.pipe()
@@ -87,19 +85,18 @@ def open_executive():
         os.close(pwrite)
         os.close(cread)
         os.close(cwrite)
-        os.execl('executive', 'executive')
+        if(sys.argv > 3):
+            os.execl('executive', 'executive', sys.argv[1], sys.argv[2])
+        elif(sys.argv > 2):
+            os.execl('executive', 'executive', sys.argv[1])
+        else:
+            os.execl('executive', 'executive')
         sys.exit(0)
 
 
 if __name__ == "__main__":
     # start up threads to listen on UDP ports
     open_executive()
-    if len(sys.argv) > 1:
-        print(sys.argv[1])
-        sys.stdout.flush()
-    else:
-        print('NOFILE')
-        sys.stdout.flush()
     asv_thread = threading.Thread(target=recv_asv)
     asv_thread.do_run = True
     asv_thread.start()
