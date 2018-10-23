@@ -85,9 +85,9 @@ def open_executive():
         os.close(pwrite)
         os.close(cread)
         os.close(cwrite)
-        if(sys.argv > 3):
+        if(len(sys.argv) > 3):
             os.execl('executive', 'executive', sys.argv[1], sys.argv[2])
-        elif(sys.argv > 2):
+        elif(len(sys.argv) > 2):
             os.execl('executive', 'executive', sys.argv[1])
         else:
             os.execl('executive', 'executive')

@@ -382,7 +382,7 @@ int main(int argc, char *argv[])
 
     communication_With_Planner.cwrite("Start");
     communication_With_Planner.cwrite("max speed 2.75");
-    communication_With_Planner.cwrite("max turning radius 0.75");
+    communication_With_Planner.cwrite("max turning radius 12");
 
     if (argc > 2)
     {
