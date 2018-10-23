@@ -13,6 +13,7 @@ import test
 # matplotlib.use("TkAgg")
 # import matplotlib.pyplot as plt
 import socket
+import datetime
 #import matplotlib.animation as animation
 # from matplotlib import rcParams, cycler
 
@@ -141,9 +142,9 @@ class DynamicObsSim:
                         for j in range(0, len(f1[i])):
                             if f1[i][j] == '@':
                                 self.curr_x = self.wpt_x = j
-                                self.curr_y = self.wpt_y = ( maxy - i + 2 )
+                                self.curr_y = self.wpt_y = ( maxy - i + 1 )
                             if f1[i][j] == '#':
-                                self.static_obs.append((j ,( maxy - i + 2 )))
+                                self.static_obs.append((j ,( maxy - i + 1 )))
             self.boat_dynamics = dynamics.Dynamics(cw4.cw4, self.curr_x, self.curr_y)
 
 
@@ -178,6 +179,7 @@ class DynamicObsSim:
             self.update_time, self.sleeptime = next(g)
             time.sleep(self.sleeptime)
             f(*args)
+            
 
     # def hello(self,s):   #TEST
     #	print('hello {} ({:.4f})'.format(s,time.time()))
@@ -225,15 +227,13 @@ class DynamicObsSim:
                 self.future_x = []
                 self.future_y = []
                 self.future_heading = []
-
                 for i in range(0,n):
                     data = self.soc.recv(4096)
                     data1 = data.split(' ');
                     self.future_x.append(float(data1[0]))
                     self.future_y.append(float(data1[1]))
                     self.future_heading.append(float(data1[2]))
-                    
-            else:
+                data = self.soc.recv(4096)
                 print('***************', data, '*******************')
                 dummy = data.decode('utf-8').split(",")
                 #self.wpt_x = float(dummy[0])
@@ -406,10 +406,12 @@ class DynamicObsSim:
 
     def run(self):
         # self.do_every(1.0,self.hello,'foo')		#TEST
-        self.plot_draw.on_execute(self.curr_x, self.curr_y, self.start_heading, self.nobs, self.xobs, self.yobs, self.hobs)
-        self.plot_draw.update()
+        if self.plot_boolean:
+            self.plot_draw.on_execute(self.curr_x, self.curr_y, self.start_heading, self.nobs, self.xobs, self.yobs, self.hobs)
+            self.plot_draw.update()
         self.do_every(self.period, self.update)
-        self.plot_draw.stop()
+        if self.plot_boolean:
+            self.plot_draw.stop()
 
         '''		
 		# WHERE TO PUT THIS ?!?
