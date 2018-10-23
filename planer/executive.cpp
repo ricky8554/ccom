@@ -89,6 +89,7 @@ void requestPath()
     estimateStart = current_location;
     while (running)
     {
+        
         vector<ObjectPar> newpath;
         int addestimate = 1;
         communication_With_Planner.cwrite("plan");
@@ -102,7 +103,7 @@ void requestPath()
         }
         newcover.clear();
         mtx_cover.unlock();
-
+        
         //add covered method
         estimateStart = current_location;
         communication_With_Planner.cwrite("start state " + estimateStart.toString());
@@ -118,6 +119,7 @@ void requestPath()
         }
         mtx_obs.unlock();
         double start_time = getCurrentTime();
+        
 
         fgets(response, sizeof response, readstream);
         if (!strncmp(response, "done", 4))
@@ -190,8 +192,12 @@ void requestWorldInformation()
     while (running) // should clear the previous one prevent the disappear obs
     {
         read(STDIN_FILENO, locationString, 8192);
+        
+        
         if (!strncmp(locationString, "Location", 8))
         {
+            
+            
             request_start = 1;
             sscanf(locationString + 9, "%lf,%lf,%lf,%lf,%lf [%d]", &current_location.x, &current_location.y, &current_location.heading, &current_location.speed, &current_location.otime, &h);
             mtx_cover.lock();
@@ -234,15 +240,16 @@ void requestWorldInformation()
                 //     //need to more careful to check if index is right after
                 //     // dyamic_obstacles[index].printerror();
             }
+            d_obstacles_size = dyamic_obstacles.size();
             while (index >= d_obstacles_size)
                 dyamic_obstacles.pop_back();
             mtx_obs.unlock();
         }
         else
         {
-            //cerr << "EXECUTIVE::ERROR REQUEST" << endl;
-            //cerr << locationString << endl;
-            //cerr << "END ERROR" << endl;
+            cerr << "EXECUTIVE::ERROR REQUEST" << endl;
+            cerr << locationString << endl;
+            cerr << "END ERROR" << endl;
         }
         checkTerminate();
     }
@@ -364,7 +371,6 @@ int main(int argc, char *argv[])
 
     char done[100];
     communication_With_Planner.cread(done, 100);
-    cerr << "EXEUTIVE::START" << endl;
     requestPath();
 
     thread_for_controller.join();
