@@ -138,7 +138,10 @@ void sendAction()
                 currenttime_for_action = oldaction.otime + 0.05;
                 //oldaction = action;
                 //mutex for start and action
-                pheading = to_string(heading);
+                if(action.heading != 0)
+                    pheading = to_string(heading);
+                else
+                    pheading = to_string(0);
                 previousrequestString = pheading + "," + to_string(speed);
                 // pheading = to_string(action.heading);
                 // previousrequestString = pheading + "," + to_string(action.speed);

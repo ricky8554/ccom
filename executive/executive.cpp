@@ -30,7 +30,9 @@ int request_start1 = 0;
 int countn = 0;
 int send = 1;
 double difx = 0, dify = 0;
+double previousheading = 0;
 
+ObjectPar pstart;
 ObjectPar previousAction;
 ObjectPar estimateStart;
 ObjectPar current_location;
@@ -74,6 +76,7 @@ void findStart()
         {
             if (path[i].otime > otime && i != 0)
             {
+                cerr << "FIRST" << endl;
                 double timeiterval = otime - path[i - 1].otime;
                 double heading = atan2(path[i].x  - current.x,path[i].y - current.y );
                 estimateStart = ObjectPar(current.x + timeiterval * (path[i].x - current.x), current.y + timeiterval * (path[i].y - current.y), heading, current.speed, otime); //chage to relative heading
@@ -82,17 +85,17 @@ void findStart()
             }
         }
     }
-    else
-    {
-        estimateStart = current_location;
-        estimateStart.otime += 1;
-    }
+    
 
     if (!find)
     {
-        estimateStart = current_location;
-        estimateStart.otime += 1;
+        cerr << "SECOND" << endl;
+        ObjectPar current = current_location;
+        double timeiterval = 1;
+        double heading = atan2(previousAction.x  - pstart.x,previousAction.y - pstart.y );
+        estimateStart = ObjectPar(current.x + timeiterval * previousAction.speed * cos(heading), current.y + timeiterval * previousAction.speed * sin(heading), current.heading, current.speed, current.otime +1);
     }
+
 
     mtx_path.unlock();
 }
@@ -110,6 +113,7 @@ void requestPath()
         this_thread::sleep_for(std::chrono::milliseconds(50));
 
     previousAction = current_location;
+    pstart = current_location;
     estimateStart = current_location;
     estimateStart.otime += 1;
     while (running)
@@ -313,9 +317,9 @@ void sendAction()
         if (send && path_size > pathindex)
         {
             string s = "";
-            s += current_location.toString() + "\n";
-
-            while (path_size > pathindex && current_location.otime > path[pathindex].otime)
+            pstart = current_location;
+            s += pstart.toString() + "\n";
+            while (path_size > pathindex && pstart.otime > path[pathindex].otime)
                 pathindex++;
             if (path_size == pathindex)
             {
@@ -326,6 +330,7 @@ void sendAction()
             }
 
             previousAction = path[pathindex];
+            previousheading = atan2(previousAction.x  - pstart.x,previousAction.y - pstart.y );
             s += path[pathindex].toString() + "\n";
             sendPath(s);
             // cerr << "EXECUTIVE::SEND::start" << endl;;
