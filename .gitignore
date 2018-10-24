@@ -1,0 +1,8 @@
+*
+!.gitignore
+
+!*/*.cpp
+!*/*.h
+!*/Makefile
+!*/*.py
+!*/*/*.png
