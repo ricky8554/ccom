@@ -1,8 +1,10 @@
 *
 !.gitignore
 
-!*/*.cpp
-!*/*.h
-!*/Makefile
-!*/*.py
-!*/*/*.png
+!*/
+!executive/*.cpp
+!executive/*.h
+!executive/Makefile
+!executive/*.py
+!simulator/*.py
+!simulator/explosion/*.png
