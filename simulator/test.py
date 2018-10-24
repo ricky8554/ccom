@@ -57,6 +57,7 @@ class PLOT:
         self.future_x = []
         self.future_y = []
         self.future_heading = []
+        self.estimateStart = (0,0,0)
         self.triangleX = (0, -5, 5)
         self.triangleY = (-10, 10, 10)
         self.static_obs = static_obs
@@ -193,7 +194,7 @@ class PLOT:
         # self.stop()
         self.pathList = [(curr_x, curr_y)]
         self.updateInformation(
-            curr_x, curr_y, start_heading, nobs, xobs, yobs, hobs, [], [], [])
+            curr_x, curr_y, start_heading, nobs, xobs, yobs, hobs, [], [], [],self.estimateStart)
         self.update()
 
     def checkCollision(self):
@@ -230,7 +231,7 @@ class PLOT:
                 i * scalew, 0), self.scale_xy(i*scalew, self.scaleh))
             # self.draw_text(self.scalew,i * scaleh, i * self.maxX/(self.lines + 1) )
 
-    def updateInformation(self, curr_x, curr_y, start_heading, nobs, xobs, yobs, hobs, future_x, future_y, future_heading):
+    def updateInformation(self, curr_x, curr_y, start_heading, nobs, xobs, yobs, hobs, future_x, future_y, future_heading,estimateStart):
         if self.pathList[-1] != (curr_x, curr_y):
             self.pathList.append((curr_x, curr_y))
         self.curr_x = curr_x
@@ -243,6 +244,7 @@ class PLOT:
         self.future_heading = future_heading
         self.future_x = future_x
         self.future_y = future_y
+        self.estimateStart = estimateStart
 
     def draw_future(self):
         size = len(self.future_heading)
@@ -255,6 +257,9 @@ class PLOT:
                     c = (255 - decay * i, 0, 255 - decay * i)
                     self.draw_vehicle(
                         self.future_heading[i], c, *self.scale_item(self.future_x[i], self.future_y[i]))
+        x,y,heading = self.estimateStart
+        self.draw_vehicle(
+                        heading, Color_GREEN, *self.scale_item(x, y))
 
     def draw_current(self):
         self.draw_vehicle(self.start_heading, Color_BLUE, *

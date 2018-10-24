@@ -303,6 +303,7 @@ void sendPath(string &s)
         if (path.size() - 1 != i)
             s += '\n';
     }
+    s+= "\n" + estimateStart.toString();//for estimate start
     s += '\0';
 }
 
@@ -421,7 +422,7 @@ int main(int argc, char *argv[])
 
     communication_With_Planner.cwrite("Start");
     communication_With_Planner.cwrite("max speed 2.75");
-    communication_With_Planner.cwrite("max turning radius 12");
+    communication_With_Planner.cwrite("max turning radius 0.75");
 
     if (argc > 2)
     {

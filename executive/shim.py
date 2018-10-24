@@ -62,6 +62,8 @@ def recv_control():
                 sending = raw_input() + '\n'
                 s3.sendto(sending.encode('utf-8'), ('localhost', UDP_CTRL_PORT))
                 count -= 1
+            sending = raw_input() + '\n'
+            s3.sendto(sending.encode('utf-8'), ('localhost', UDP_CTRL_PORT))
             line = raw_input()
             s3.sendto(line.encode('utf-8'), ('localhost', UDP_CTRL_PORT))
     sys.stderr.write('EOF encountered.')

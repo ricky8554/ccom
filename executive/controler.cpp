@@ -44,6 +44,9 @@ void readpath(FILE* readstream)
         fgets(locationString, sizeof locationString, readstream);
         path+=locationString;
     }
+    //for estimate start;
+    fgets(locationString, sizeof locationString, readstream);
+    path+=locationString;
     
 }
 

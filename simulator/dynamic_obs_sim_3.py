@@ -104,6 +104,7 @@ class DynamicObsSim:
         self.future_heading = []
         self.future_x = []
         self.future_y = []
+        self.estimateStart = (0,0,0)
 
         # Plot
         self.plot_boolean = plot_bool
@@ -234,6 +235,9 @@ class DynamicObsSim:
                     self.future_y.append(float(data1[1]))
                     self.future_heading.append(float(data1[2]))
                 data = self.soc.recv(4096)
+                data1 = data.split(' ');
+                self.estimateStart = (float(data1[0]),float(data1[1]),float(data1[2]))
+                data = self.soc.recv(4096)
                 print('***************', data, '*******************')
                 dummy = data.decode('utf-8').split(",")
                 #self.wpt_x = float(dummy[0])
@@ -329,7 +333,7 @@ class DynamicObsSim:
 
 
         if self.plotaxes == None:
-            self.plot_draw.updateInformation(self.curr_x, self.curr_y, self.curr_heading, self.nobs, self.xobs, self.yobs, self.hobs,self.future_x,self.future_y,self.future_heading)
+            self.plot_draw.updateInformation(self.curr_x, self.curr_y, self.curr_heading, self.nobs, self.xobs, self.yobs, self.hobs,self.future_x,self.future_y,self.future_heading,self.estimateStart)
             self.plot_draw.update()
             # self.plotaxes = plt.plot(self.xx, self.yy, ".b")
 
