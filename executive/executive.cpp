@@ -176,13 +176,16 @@ void requestPath()
             else
                 break;
         }
-        
+        cerr << "START" << endl;
         for (int i = 0; i < numberOfState; i++) // if no new path then keep old path
         {
             fgets(response, sizeof response, readstream);
             sscanf(response, "%lf %lf %lf %lf %lf\n", &x, &y, &heading, &speed, &otime);
             if (time_bound > otime)
                 continue;
+            
+            cerr << ObjectPar(x,y,heading,speed,otime).toString()<< endl;
+            
 
             if (unvisit)
             {
@@ -221,6 +224,7 @@ void requestPath()
             p = ObjectPar(x + diffx, y + diffy, heading, speed, otime);
             newpath.push_back(p);
         }
+        cerr << "END" << endl;
         if(!unvisit)
         {
             path = newpath;
@@ -306,6 +310,7 @@ void sendPath(string &s)
     s+= "\n" + estimateStart.toString();//for estimate start
     s += '\0';
 }
+
 
 void sendAction()
 {
@@ -396,6 +401,7 @@ void read_goal(string goal)
     ifstream f(goal);
     if (f.is_open())
     {
+        cerr<< "FILE" << endl;
         int numofgoal;
         f >> numofgoal;
         double x, y;
@@ -423,10 +429,9 @@ int main(int argc, char *argv[])
     communication_With_Planner.cwrite("Start");
     communication_With_Planner.cwrite("max speed 2.75");
     communication_With_Planner.cwrite("max turning radius 0.75");
-
+    cerr << argc << endl;
     if (argc > 2)
     {
-
         string file = argv[1], file1 = argv[2];
         print_map(file);
         read_goal(file1);

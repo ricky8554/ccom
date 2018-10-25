@@ -77,7 +77,7 @@ def open_executive():
         os.dup2(pread, 0)
         os.dup2(pwrite, 1)
         os.close(pread)
-        os.close(pwrite)
+        os.close(pwrite) 
         os.close(cread)
         os.close(cwrite)
     else:
@@ -87,9 +87,9 @@ def open_executive():
         os.close(pwrite)
         os.close(cread)
         os.close(cwrite)
-        if(len(sys.argv) > 3):
+        if(len(sys.argv) > 2):
             os.execl('executive', 'executive', sys.argv[1], sys.argv[2])
-        elif(len(sys.argv) > 2):
+        elif(len(sys.argv) > 1):
             os.execl('executive', 'executive', sys.argv[1])
         else:
             os.execl('executive', 'executive')
